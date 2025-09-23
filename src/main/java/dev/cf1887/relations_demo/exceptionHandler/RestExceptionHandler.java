@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import dev.cf1887.relations_demo.exception.DuplicateProjectNameException;
+import dev.cf1887.relations_demo.exception.DuplicateTagNameException;
 import dev.cf1887.relations_demo.exception.NotFoundException;
 
 @RestControllerAdvice
@@ -23,6 +24,11 @@ public class RestExceptionHandler {
                         "status", 404,
                         "error", "Not Found",
                         "message", exception.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateTagNameException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicate(DuplicateTagNameException exception) {
+        return conflict(exception.getMessage());
     }
 
     @ExceptionHandler(DuplicateProjectNameException.class)
