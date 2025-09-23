@@ -1,5 +1,8 @@
 package dev.cf1887.relations_demo.entity;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -7,6 +10,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 
 @Entity
@@ -22,6 +27,30 @@ public class Task {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
+
+    @ManyToMany
+    @JoinTable(name = "task_tag", joinColumns = @JoinColumn(name = "task_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tags = new HashSet<>();
+
+    /**
+     * Convenience method to add a tag to task
+     * 
+     * @param tag
+     */
+    public void addTag(Tag tag) {
+        tags.add(tag);
+        tag.getTasks().add(this);
+    }
+
+    /**
+     * Convenience method to remove a tag from a task
+     * 
+     * @param tag
+     */
+    public void removeTag(Tag tag) {
+        tags.remove(tag);
+        tag.getTasks().remove(this);
+    }
 
     public Long getId() {
         return id;
@@ -45,6 +74,14 @@ public class Task {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public Set<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
     }
 
 }
