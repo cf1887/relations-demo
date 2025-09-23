@@ -21,3 +21,26 @@ CREATE TABLE IF NOT EXISTS task (
     PRIMARY KEY (id),
     CONSTRAINT fk_task_project FOREIGN KEY (project_id) REFERENCES project(id) ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Create tag table
+CREATE TABLE IF NOT EXISTS tag (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(64) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_tag_name (name)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Create join table for many-to-many relation between task and tag
+CREATE TABLE IF NOT EXISTS task_tag (
+    task_id BIGINT NOT NULL,
+    tag_id  BIGINT NOT NULL,
+    PRIMARY KEY (task_id, tag_id),
+    KEY idx_tasktag_task (task_id),
+    KEY idx_tasktag_tag (tag_id),
+    CONSTRAINT fk_tasktag_task
+        FOREIGN KEY (task_id) REFERENCES task(id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_tasktag_tag
+        FOREIGN KEY (tag_id)  REFERENCES tag(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
