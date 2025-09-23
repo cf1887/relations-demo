@@ -10,9 +10,20 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import dev.cf1887.relations_demo.exception.DuplicateProjectNameException;
+import dev.cf1887.relations_demo.exception.NotFoundException;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(NotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                Map.of(
+                        "timestamp", Instant.now().toString(),
+                        "status", 404,
+                        "error", "Not Found",
+                        "message", exception.getMessage()));
+    }
 
     @ExceptionHandler(DuplicateProjectNameException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicate(DuplicateProjectNameException exception) {
