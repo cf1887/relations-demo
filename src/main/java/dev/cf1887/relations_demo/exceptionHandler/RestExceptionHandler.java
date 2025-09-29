@@ -9,12 +9,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import dev.cf1887.relations_demo.exception.DuplicateEmailException;
 import dev.cf1887.relations_demo.exception.DuplicateProjectNameException;
 import dev.cf1887.relations_demo.exception.DuplicateTagNameException;
 import dev.cf1887.relations_demo.exception.NotFoundException;
+import dev.cf1887.relations_demo.exception.ProfileAlreadyExistsException;
 
 @RestControllerAdvice
 public class RestExceptionHandler {
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateEmail(RuntimeException exception) {
+        return handleUserConflicts(exception);
+    }
+
+    @ExceptionHandler(ProfileAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleProfileAlreadyExists(RuntimeException exception) {
+        return handleUserConflicts(exception);
+    }
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(NotFoundException exception) {
@@ -48,5 +60,14 @@ public class RestExceptionHandler {
                         "status", 409,
                         "error", "Conflict",
                         "message", message));
+    }
+
+    private ResponseEntity<Map<String, Object>> handleUserConflicts(RuntimeException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(
+                Map.of(
+                        "timestamp", Instant.now().toString(),
+                        "status", 409,
+                        "error", "Conflict",
+                        "message", exception.getMessage()));
     }
 }

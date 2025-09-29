@@ -51,3 +51,22 @@ CREATE TABLE IF NOT EXISTS comment (
     KEY idx_comment_task (task_id),
     CONSTRAINT fk_comment_task FOREIGN KEY (task_id) REFERENCES task(id) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Create user table
+CREATE TABLE IF NOT EXISTS user_account (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    email VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_user_email (email)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Create user_profile table
+CREATE TABLE IF NOT EXISTS user_profile (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    user_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_user_profile_user (user_id),
+    CONSTRAINT fk_profile_user FOREIGN KEY (user_id) REFERENCES user_account(id) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
