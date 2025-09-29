@@ -33,14 +33,21 @@ CREATE TABLE IF NOT EXISTS tag (
 -- Create join table for many-to-many relation between task and tag
 CREATE TABLE IF NOT EXISTS task_tag (
     task_id BIGINT NOT NULL,
-    tag_id  BIGINT NOT NULL,
+    tag_id BIGINT NOT NULL,
     PRIMARY KEY (task_id, tag_id),
     KEY idx_tasktag_task (task_id),
     KEY idx_tasktag_tag (tag_id),
-    CONSTRAINT fk_tasktag_task
-        FOREIGN KEY (task_id) REFERENCES task(id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_tasktag_tag
-        FOREIGN KEY (tag_id)  REFERENCES tag(id)
-        ON UPDATE CASCADE ON DELETE RESTRICT
+    CONSTRAINT fk_tasktag_task FOREIGN KEY (task_id) REFERENCES task(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_tasktag_tag FOREIGN KEY (tag_id) REFERENCES tag(id) ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- Create comment table
+CREATE TABLE IF NOT EXISTS comment (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    task_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_comment_task (task_id),
+    CONSTRAINT fk_comment_task FOREIGN KEY (task_id) REFERENCES task(id) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
