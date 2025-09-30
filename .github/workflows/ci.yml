@@ -1,7 +1,56 @@
 name: CI
 
+# 
+# Conditions whenever the pipeline shall be triggered
+# 
 on:
   push:
-    branches: ["**"]
+    branches: ["**"] # triggered by all branches
   pull_request:
 
+# 
+# Setting up some variables
+# 
+env:
+  IMAGE_NAME: "ghcr.io/${{ github.repository }}"
+  IMAGE_TAG: ${{ github.sha }}
+
+# 
+# Defining the jobs
+# 
+jobs:
+  # Build the image
+  build:
+    # Runner-Image/OS
+    runs-on: ubuntu-latest
+    # Grant or remove rights to the job token
+    permissions:
+      contents: read
+      packages: write # required for GHCR push
+    # Orders that will be executed one after another
+    steps:
+      # Loads the code in the runner vm
+      - name: "Checkout"
+        uses: actions/checkout@v4
+      
+      # Authenticate docker (from runner) to GHCR
+      - name: "Login to GHCR"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }} # user that executed the action
+          password: ${{ secrets.GITHUB_TOKEN }} # auto-generated token by github
+      
+      # Execute "docker build" and "docker push" (into registry)
+      - name: "Build and push (amd64)"
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          # Decision for this project: Only one system-architecture.
+          # More could be added here, but could slow down the pipeline aswell.
+          platforms: linux/amd64
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_NAME }}:latest
