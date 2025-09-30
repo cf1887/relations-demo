@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpw}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-relations_demo}
+      MYSQL_USER: ${MYSQL_USER:-relations_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeMe!}
+    # ports:
+    #   - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+  
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:-relations_demo}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-relations_user}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-changeMe!}
+      SERVER_PORT: ${SERVER_PORT:-8989}
+      LOGGING_LEVEL: warn
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: debug
+    ports:
+      - "${SERVER_PORT:-8989}:8989"
+
+volumes:
+  dbdata:
