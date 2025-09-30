@@ -54,3 +54,18 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ${{ env.IMAGE_NAME }}:latest
+  # Deploy the image
+  deploy-dummy:
+    # Runner-Image/OS
+    runs-on: ubuntu-latest
+    # Required jobs
+    needs: build
+    # Orders that will be executed one after another
+    steps:
+      # Just print a placeholder for now
+      # TODO: Replace this with a proper deployment
+      - name: "Show deploy placeholder"
+        run: |
+          echo "== DUMMY DEPLOYMENT =="
+          echo "This is a placeholder for a real deployment job."
+          echo "Used image: ghcr.io/${{ github.repository }}:${{ github.sha }}"
