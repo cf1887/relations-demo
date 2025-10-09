@@ -1,0 +1,134 @@
+name: CI
+
+# 
+# Conditions whenever the pipeline shall be triggered
+# 
+on:
+  push:
+    branches: ["**"] # triggered by all branches
+  pull_request:
+
+# 
+# Setting up some variables
+# 
+env:
+  IMAGE_NAME: "ghcr.io/${{ github.repository }}"
+  IMAGE_TAG: ${{ github.sha }}
+
+# 
+# Defining the jobs
+# 
+jobs:
+  # Build the image
+  build:
+    # Runner-Image/OS
+    runs-on: ubuntu-latest
+    # Grant or remove rights to the job token
+    permissions:
+      contents: read
+      packages: write # required for GHCR push
+    # Orders that will be executed one after another
+    steps:
+      # Loads the code in the runner vm
+      - name: "Checkout"
+        uses: actions/checkout@v4
+      
+      # Authenticate docker (from runner) to GHCR
+      - name: "Login to GHCR"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }} # user that executed the action
+          password: ${{ secrets.GITHUB_TOKEN }} # auto-generated token by github
+      
+      # Execute "docker build" and "docker push" (into registry)
+      - name: "Build and push (amd64)"
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          # Decision for this project: Only one system-architecture.
+          # More could be added here, but could slow down the pipeline aswell.
+          platforms: linux/amd64
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_NAME }}:latest
+  # Deploy the image
+  deploy-dummy:
+    # Runner-Image/OS
+    runs-on: ubuntu-latest
+    # Required jobs
+    needs: build
+    # Orders that will be executed one after another
+    steps:
+      # Just print a placeholder for now
+      # TODO: Replace this with a proper deployment
+      - name: "Show deploy placeholder"
+        run: |
+          echo "== DUMMY DEPLOYMENT =="
+          echo "This is a placeholder for a real deployment job."
+          echo "Used image: ghcr.io/${{ github.repository }}:${{ github.sha }}"
+  
+  # Mini-Test with ping
+  # TODO: Proper testing
+  ping:
+    # Runner-Image/OS
+    runs-on: ubuntu-latest
+    # Required jobs
+    needs: build
+    # Additional variables for this job
+    env:
+      APP_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      COMPOSE_PROJECT_NAME: ci
+      APP_URL_IN_NET: http://app:8989/api/ping
+    # Orders that will be executed one after another
+    steps:
+      # Loads the code in the runner vm
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      # # DEBUG: Show workspace for debug reasons
+      # - name: "Show workspace"
+      #   run: |
+      #     pwd
+      #     ls -la
+      #     echo "Search compose files"
+      #     ls -la | grep -i compose || true
+
+      # Authenticate docker (from runner) to GHCR
+      - name: "Login to GHCR"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Pull images from GHCR
+      - name: "Pull images (compose)"
+        run: "docker compose -f compose.yml -f compose.ci.yml pull"
+      
+      # Run the compose network
+      - name: "Start stack (compose up)"
+        run: "docker compose -f compose.yml -f compose.ci.yml up -d --no-build"
+      
+      # Try to ping at APP_URL_IN_NET
+      - name: "Wait & ping /api/ping inside compose network"
+        # Use a one-off container on a curl-image to start the ping itself.
+        # To clarify the curl flags -fsS:
+          # -f: "fail fast"   -> http-status-code >= 400 results in an early exit
+          # -s: "silent"      -> don't show progress
+          # -S: "show errors" -> show error messages even if the "-s" flag is set
+        run: |
+          echo "Warte auf $APP_URL_IN_NET ..."
+          docker run --rm --network ${COMPOSE_PROJECT_NAME}_default \
+            curlimages/curl:8.9.1 \
+            -fsS "$APP_URL_IN_NET" \
+            --retry 30 \
+            --retry-delay 2 \
+            --retry-connrefused
+      
+      # Cleanup
+      - name: "Compose down (cleanup)"
+        if: always()
+        run: docker compose -f compose.yml -f compose.ci.yml down -v
