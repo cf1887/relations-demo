@@ -88,13 +88,13 @@ jobs:
       - name: "Checkout"
         uses: actions/checkout@v4
 
-      # DEBUG: Show workspace for debug reasons
-      - name: "Show workspace"
-        run: |
-          pwd
-          ls -la
-          echo "Search compose files"
-          ls -la | grep -i compose || true
+      # # DEBUG: Show workspace for debug reasons
+      # - name: "Show workspace"
+      #   run: |
+      #     pwd
+      #     ls -la
+      #     echo "Search compose files"
+      #     ls -la | grep -i compose || true
 
       # Authenticate docker (from runner) to GHCR
       - name: "Login to GHCR"
