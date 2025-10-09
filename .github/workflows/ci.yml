@@ -114,17 +114,19 @@ jobs:
       
       # Try to ping at APP_URL_IN_NET
       - name: "Wait & ping /api/ping inside compose network"
+        # Use a one-off container on a curl-image to start the ping itself.
+        # To clarify the curl flags -fsS:
+          # -f: "fail fast"   -> http-status-code >= 400 results in an early exit
+          # -s: "silent"      -> don't show progress
+          # -S: "show errors" -> show error messages even if the "-s" flag is set
         run: |
           echo "Warte auf $APP_URL_IN_NET ..."
-          for i in $(seq 1 60); do
-            if docker run --rm --network ${COMPOSE_PROJECT_NAME}_default curlimages/curl:8.9.1 -fsS "$APP_URL_IN_NET" > /dev/null; then
-              echo "Ping OK"
-              exit 0;
-            fi
-            sleep 2
-          done
-          echo "Ping fehlgeschlagen"
-          exit 1
+          docker run --rm --network ${COMPOSE_PROJECT_NAME}_default \
+            curlimages/curl:8.9.1 \
+            -fsS "$APP_URL_IN_NET" \
+            --retry 30 \
+            --retry-delay 2 \
+            --retry-connrefused
       
       # Cleanup
       - name: "Compose down (cleanup)"
